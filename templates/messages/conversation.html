@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Chat with {{ other.name }}{% endblock %}
+{% block body_class %}is-chat{% endblock %}
+{% block content %}
+<section class="chat" aria-label="Conversation with {{ other.name }}">
+  <header class="chat__head">
+    <a class="iconbtn" href="{{ url_for('messages.inbox') }}" aria-label="Back to all messages">{{ ui.icon("left") }}</a>
+    <a class="chat__who" href="{{ url_for('people.profile', user_id=other.id) }}">
+      {{ ui.avatar(other.name, other.id, "sm") }}
+      <span><strong>{{ other.name }}</strong>{% if other.location %}<small>{{ other.location }}</small>{% endif %}</span>
+    </a>
+  </header>
+
+  <div class="chat__log" id="chat-log" tabindex="0" aria-label="Messages">
+    {% for m in history %}
+    {% set mine = m.sender_id == current_user.id %}
+    <div class="bubble{% if mine %} bubble--mine{% endif %}"{% if loop.last %} id="latest"{% endif %}>
+      <span class="visually-hidden">{{ "You" if mine else other.name }}:</span>
+      <p class="prewrap">{{ m.message }}</p>
+      <small>{{ m.created_at|timestamp }}</small>
+    </div>
+    {% else %}
+    <p class="chat__empty">This is the start of your chat with {{ other.name }}. Say hi and plan a game!</p>
+    {% endfor %}
+  </div>
+
+  <form method="post" class="chat__form">
+    {{ ui.csrf() }}
+    <label for="message" class="visually-hidden">Message to {{ other.name }}</label>
+    <textarea id="message" name="message" rows="1" maxlength="{{ limits.message }}" placeholder="Write a message" required data-enter-submit>{{ draft }}</textarea>
+    <button type="submit" class="btn btn--primary" aria-label="Send message">{{ ui.icon("send") }}<span class="hide-sm">Send</span></button>
+  </form>
+</section>
+{% endblock %}

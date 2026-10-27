@@ -1,38 +1,30 @@
 {% extends "base.html" %}
-
-{% block title %}Notifications - SportsMate{% endblock %}
-
+{% import "macros.html" as ui with context %}
+{% block title %}Notifications{% endblock %}
 {% block content %}
-<section class="page-header">
-    <div>
-        <span class="eyebrow">UPDATES</span>
-        <h1>Notifications</h1>
-        <p>Stay up to date with your athletic network.</p>
-    </div>
-</section>
+<header class="formhead">
+  <h1>Notifications</h1>
+  <p>Who joined your activities, changes to games you play in, and SportsMate requests.</p>
+</header>
 
-<div class="notification-list">
-    {% for notification in notifications %}
-    <article class="notification-card {% if not notification.is_read %}unread{% endif %}">
-        <div class="notification-icon">
-            {% if notification.type == "message" %}
-                <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
-            {% elif notification.type == "connection" %}
-                <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            {% else %}
-                <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20"/><path d="M2 12h20"/></svg>
-            {% endif %}
-        </div>
-        <div>
-            <p>{{ notification.message }}</p>
-            <small>{{ notification.created_at }}</small>
-        </div>
-    </article>
-    {% else %}
-    <div class="empty-state">
-        <h3>No alerts</h3>
-        <p>You are fully caught up on all network activity.</p>
-    </div>
-    {% endfor %}
-</div>
+{% if notifications %}
+<ul class="list list--notes">
+  {% for n in notifications %}
+  {% set kind_icon = {"message": "message", "connection": "user-plus"}.get(n.type, "calendar") %}
+  <li class="note{% if not n.is_read %} note--new{% endif %}">
+    {% if n.href %}<a class="note__inner" href="{{ n.href }}">{% else %}<div class="note__inner">{% endif %}
+      <span class="note__icon">{{ ui.icon(kind_icon) }}</span>
+      <span class="note__text">
+        {% if not n.is_read %}<span class="visually-hidden">New:</span>{% endif %}
+        {{ n.message }}
+        <small>{{ n.created_at|timestamp }}</small>
+      </span>
+      {% if n.href %}{{ ui.icon("right", "note__arrow") }}{% endif %}
+    {% if n.href %}</a>{% else %}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+{{ ui.empty("You're up to date", "When someone joins your activity or sends you a SportsMate request, you'll see it here.", url_for('activities.browse'), "Find activities", "bell") }}
+{% endif %}
 {% endblock %}

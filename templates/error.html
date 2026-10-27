@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<section class="errorpage">
+  <p class="errorpage__code" aria-hidden="true">{{ code }}</p>
+  <h1>{{ title }}</h1>
+  <p>{{ text }}</p>
+  <div class="errorpage__actions">
+    {% if current_user %}
+    <a class="btn btn--primary" href="{{ url_for('main.dashboard') }}">Go to your dashboard</a>
+    <a class="btn btn--secondary" href="{{ url_for('activities.browse') }}">Find activities</a>
+    {% else %}
+    <a class="btn btn--primary" href="{{ url_for('main.index') }}">Go to the start page</a>
+    <a class="btn btn--secondary" href="{{ url_for('auth.login') }}">Log in</a>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

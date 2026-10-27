@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Activities{% endblock %}
+{% block content %}
+<header class="pagehead pagehead--activities">
+  <div>
+    <h1>Activities</h1>
+    <p>Find a game that fits your sport, level and week.</p>
+  </div>
+  <a class="btn btn--primary" href="{{ url_for('activities.create') }}">{{ ui.icon("plus") }} Create activity</a>
+</header>
+
+<nav class="tabs" aria-label="Which activities">
+  {% for key, label in [("all", "All"), ("joined", "Joined"), ("hosting", "Hosting")] %}
+  <a href="{{ url_for('activities.browse', show=key, **tab_args) }}" {% if filters.show == key %}aria-current="page"{% endif %}>{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<form method="get" class="filters" role="search" aria-label="Filter activities">
+  <input type="hidden" name="show" value="{{ filters.show }}">
+  <div class="field filters__search">
+    <label for="q">Search</label>
+    <div class="input-icon">
+      {{ ui.icon("search") }}
+      <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Title, place or description" maxlength="{{ limits.search }}">
+    </div>
+  </div>
+  <div class="field">
+    <label for="sport">Sport</label>
+    <select id="sport" name="sport">
+      <option value="">All sports</option>
+      {% for sport in sports %}
+      <option value="{{ sport.name }}" {% if filters.sport == sport.name %}selected{% endif %}>{{ sport.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="skill">Level</label>
+    <select id="skill" name="skill">
+      <option value="">All levels</option>
+      {% for level in skill_levels %}
+      <option {% if filters.skill == level %}selected{% endif %}>{{ level }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="field">
+    <label for="when">When</label>
+    <select id="when" name="when">
+      {% for key, label in [("upcoming", "All upcoming"), ("today", "Today"), ("week", "Next 7 days"), ("past", "Finished")] %}
+      <option value="{{ key }}" {% if filters.when == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <label class="check filters__check">
+    <input type="checkbox" name="open_only" value="1" {% if filters.open_only %}checked{% endif %}>
+    <span>Only with free spots</span>
+  </label>
+  <div class="filters__actions">
+    <button type="submit" class="btn btn--primary">{{ ui.icon("search") }} Search</button>
+    {% if active_filters %}
+    <a class="btn btn--ghost" href="{{ url_for('activities.browse', show=filters.show) }}">Clear</a>
+    {% endif %}
+  </div>
+</form>
+
+<p class="results-count" role="status">
+  {% if activities %}
+  Showing {{ activities|length }}{% if has_next or page > 1 %} on page {{ page }}{% endif %}
+  {% if filters.when == "past" %}finished{% endif %} {{ "activity" if activities|length == 1 else "activities" }}
+  {% endif %}
+</p>
+
+{% if activities %}
+<div class="grid grid--cards">
+  {% for activity in activities %}{{ ui.activity_card(activity) }}{% endfor %}
+</div>
+{{ ui.pagination("activities.browse", page, has_next, query_args) }}
+{% elif active_filters %}
+{{ ui.empty("No matches", "No activities match these filters. Try another sport or level, or clear the filters.", url_for('activities.browse', show=filters.show), "Clear filters", "search") }}
+{% elif filters.show == "hosting" %}
+{{ ui.empty("You're not hosting anything", "Plan a game, choose the place and time, and let others join.", url_for('activities.create'), "Create activity", "calendar") }}
+{% elif filters.show == "joined" %}
+{{ ui.empty("You haven't joined anything", "Look through the open activities and join one.", url_for('activities.browse'), "Find activities", "calendar") }}
+{% else %}
+{{ ui.empty("No activities yet", "Nobody has planned an activity for this period. Host the first one.", url_for('activities.create'), "Create activity", "calendar") }}
+{% endif %}
+{% endblock %}

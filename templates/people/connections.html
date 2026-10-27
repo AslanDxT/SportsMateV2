@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}My SportsMates{% endblock %}
+
+{% macro row(item, actions) -%}
+<li class="listrow">
+  <a class="listrow__person" href="{{ url_for('people.profile', user_id=item.user_id) }}">
+    {{ ui.avatar(item.name, item.user_id, "md") }}
+    <span><strong>{{ item.name }}</strong><small>{{ item.skill_level }}{% if item.location %}, {{ item.location }}{% endif %}</small></span>
+  </a>
+  <div class="listrow__actions">{{ actions }}</div>
+</li>
+{%- endmacro %}
+
+{% block content %}
+<header class="pagehead pagehead--connections">
+  <div>
+    <h1>My SportsMates</h1>
+    <p>Connected people can send each other messages.</p>
+  </div>
+  <a class="btn btn--secondary" href="{{ url_for('people.mates') }}">{{ ui.icon("search") }} Find people</a>
+</header>
+
+{% if received %}
+<section class="section" aria-labelledby="received-title">
+  <div class="section__head"><h2 id="received-title">Requests for you</h2><span class="count">{{ received|length }}</span></div>
+  <ul class="list">
+    {% for item in received %}
+    {% set actions %}
+      <form method="post" action="{{ url_for('people.connection_action', connection_id=item.id, action='accept') }}" class="inline-form">
+        {{ ui.csrf() }}<button class="btn btn--primary btn--small" type="submit">{{ ui.icon("check") }} Accept</button>
+      </form>
+      <form method="post" action="{{ url_for('people.connection_action', connection_id=item.id, action='decline') }}" class="inline-form">
+        {{ ui.csrf() }}<button class="btn btn--ghost btn--small" type="submit">Decline</button>
+      </form>
+    {% endset %}
+    {{ row(item, actions) }}
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="section" aria-labelledby="mates-title">
+  <div class="section__head"><h2 id="mates-title">Your SportsMates</h2>{% if accepted %}<span class="muted">{{ accepted|length }}</span>{% endif %}</div>
+  {% if accepted %}
+  <ul class="list">
+    {% for item in accepted %}
+    {% set actions %}
+      <a class="btn btn--secondary btn--small" href="{{ url_for('messages.conversation', user_id=item.user_id) }}">{{ ui.icon("message") }} Message</a>
+      <form method="post" action="{{ url_for('people.connection_action', connection_id=item.id, action='remove') }}" class="inline-form" data-confirm="Remove {{ item.name }} as SportsMate?">
+        {{ ui.csrf() }}<button class="btn btn--ghost btn--small" type="submit" aria-label="Remove {{ item.name }}">Remove</button>
+      </form>
+    {% endset %}
+    {{ row(item, actions) }}
+    {% endfor %}
+  </ul>
+  {% else %}
+  {{ ui.empty("No SportsMates yet", "Find people who play the same sports and send them a request. When they accept, you can chat and plan games.", url_for('people.mates'), "Find SportsMates", "users") }}
+  {% endif %}
+</section>
+
+{% if sent %}
+<section class="section" aria-labelledby="sent-title">
+  <div class="section__head"><h2 id="sent-title">Waiting for an answer</h2></div>
+  <ul class="list">
+    {% for item in sent %}
+    {% set actions %}
+      <form method="post" action="{{ url_for('people.connection_action', connection_id=item.id, action='cancel') }}" class="inline-form">
+        {{ ui.csrf() }}<button class="btn btn--ghost btn--small" type="submit">Withdraw request</button>
+      </form>
+    {% endset %}
+    {{ row(item, actions) }}
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

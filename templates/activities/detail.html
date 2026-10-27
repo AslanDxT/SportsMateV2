@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}{{ activity.title }}{% endblock %}
+{% block content %}
+{% set a = activity %}
+<a class="backlink" href="{{ url_for('activities.browse') }}">{{ ui.icon("left") }} All activities</a>
+
+<header class="matchhead matchhead--{{ a.state }}">
+  <img class="matchhead__photo" src="{{ url_for('static', filename='Images/' ~ a.image) }}" alt="">
+  <div class="matchhead__content">
+    <div class="chips">
+      <span class="chip chip--sport">{{ a.sport_name }}</span>
+      <span class="chip chip--level">{{ a.skill_level }}</span>
+      {{ ui.state_badge(a) }}
+    </div>
+    <h1>{{ a.title }}</h1>
+    <p class="matchhead__when">{{ a.date|long_date }}, {{ a.time }}</p>
+  </div>
+</header>
+
+{% if a.state == "cancelled" %}
+<div class="banner banner--danger" role="status">{{ ui.icon("ban") }}<p><strong>This activity was cancelled</strong> by the host. Nobody can join it anymore.</p></div>
+{% elif a.state == "past" %}
+<div class="banner" role="status">{{ ui.icon("info") }}<p><strong>This activity is finished.</strong> Look for a new one on the activities page.</p></div>
+{% endif %}
+
+<div class="detail">
+  <div class="detail__main">
+    <dl class="facts">
+      <div>
+        <dt>{{ ui.icon("calendar") }} When</dt>
+        <dd>{{ a.day_label }}, {{ a.time }}</dd>
+      </div>
+      <div>
+        <dt>{{ ui.icon("pin") }} Where</dt>
+        <dd>{{ a.location }}</dd>
+      </div>
+      <div>
+        <dt>{{ ui.icon("level") }} Level</dt>
+        <dd>{{ a.skill_level }}</dd>
+      </div>
+      <div>
+        <dt>{{ ui.icon("user") }} Host</dt>
+        <dd><a href="{{ url_for('people.profile', user_id=a.creator_id) }}">{{ "You" if a.is_host else a.host_name }}</a></dd>
+      </div>
+    </dl>
+
+    <section class="detail__about" aria-labelledby="about-title">
+      <h2 id="about-title">About this activity</h2>
+      {% if a.description %}
+      <p class="prewrap">{{ a.description }}</p>
+      {% else %}
+      <p class="muted">The host didn't add a description.</p>
+      {% endif %}
+    </section>
+
+    <section aria-labelledby="team-title">
+      <div class="section__head">
+        <h2 id="team-title">Team sheet</h2>
+        <span class="muted">{{ a.participant_count }} of {{ a.max_participants }}</span>
+      </div>
+      <ol class="teamsheet">
+        {% for p in participants %}
+        <li class="slot slot--taken">
+          <span class="slot__num">{{ loop.index }}</span>
+          <a class="slot__person" href="{{ url_for('people.profile', user_id=p.id) }}">
+            {{ ui.avatar(p.name, p.id, "sm") }}
+            <span><strong>{{ p.name }}{% if p.id == current_user.id %} (you){% endif %}</strong><small>{{ p.skill_level }}{% if p.location %}, {{ p.location }}{% endif %}</small></span>
+          </a>
+          {% if p.id == a.creator_id %}
+          <span class="chip chip--host">Host</span>
+          {% elif a.is_host and a.state != "past" %}
+          <form method="post" action="{{ url_for('activities.remove_participant', activity_id=a.id, user_id=p.id) }}" class="inline-form" data-confirm="Remove {{ p.name }} from this activity? They will get a notification.">
+            {{ ui.csrf() }}
+            <button type="submit" class="slot__remove" aria-label="Remove {{ p.name }} from this activity" title="Remove {{ p.name }}">{{ ui.icon("x") }}</button>
+          </form>
+          {% endif %}
+        </li>
+        {% endfor %}
+        {% if a.state in ["open", "full"] %}
+        {% set open_spots = a.spots_left %}
+        {% for i in range([open_spots, 8]|min) %}
+        <li class="slot slot--open"><span class="slot__num">{{ participants|length + loop.index }}</span><span>Open spot</span></li>
+        {% endfor %}
+        {% if open_spots > 8 %}
+        <li class="slot slot--open slot--more"><span>+ {{ open_spots - 8 }} more open spots</span></li>
+        {% endif %}
+        {% endif %}
+      </ol>
+    </section>
+  </div>
+
+  <aside class="detail__side">
+    <div class="actioncard">
+      <p class="actioncard__count"><strong>{{ a.participant_count }}</strong> / {{ a.max_participants }} <span>joined</span></p>
+      {{ ui.roster(a) }}
+      <p class="actioncard__status spots--{{ a.state }}">{{ ui.spots_text(a) }}</p>
+
+      {% if a.is_host %}
+        <p class="actioncard__you">{{ ui.icon("user") }} You host this activity.</p>
+        {% if a.state in ["open", "full"] %}
+        <a class="btn btn--secondary btn--block" href="{{ url_for('activities.edit', activity_id=a.id) }}">{{ ui.icon("edit") }} Edit details</a>
+        <form method="post" action="{{ url_for('activities.cancel', activity_id=a.id) }}" data-confirm="Cancel this activity? Everyone who joined gets a notification. This can't be undone.">
+          {{ ui.csrf() }}
+          <button type="submit" class="btn btn--danger btn--block">{{ ui.icon("ban") }} Cancel activity</button>
+        </form>
+        {% endif %}
+      {% elif a.is_joined %}
+        <p class="actioncard__you actioncard__you--in">{{ ui.icon("check") }} You're in this activity.</p>
+        {% if a.state in ["open", "full"] %}
+        <form method="post" action="{{ url_for('activities.leave', activity_id=a.id) }}" data-confirm="Leave this activity? Your spot goes to someone else.">
+          {{ ui.csrf() }}
+          <button type="submit" class="btn btn--secondary btn--block">Leave activity</button>
+        </form>
+        {% endif %}
+      {% elif a.state == "open" %}
+        <form method="post" action="{{ url_for('activities.join', activity_id=a.id) }}">
+          {{ ui.csrf() }}
+          <button type="submit" class="btn btn--primary btn--block btn--large">Join activity</button>
+        </form>
+      {% elif a.state == "full" %}
+        <button type="button" class="btn btn--block" disabled>This activity is full</button>
+      {% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,85 +1,108 @@
+{% import "macros.html" as ui with context %}
+{% set endpoint = request.endpoint or "" %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0B0F17">
-    <meta name="description" content="SportsMate - Find people. Play sports. Stay active.">
-    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2.0">
-    <title>{% block title %}SportsMate{% endblock %}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0D1626">
+  <meta name="description" content="SportsMate helps you find people nearby to play sports with.">
+  <title>{% block title %}SportsMate{% endblock %} | SportsMate</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon-32.png') }}" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/apple-touch-icon.png') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Teko:wght@500;600&display=swap">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css', v=app_version) }}">
+  <script src="{{ url_for('static', filename='js/app.js', v=app_version) }}" defer></script>
 </head>
-
-<body>
+<body class="{% if current_user %}is-member{% else %}is-guest{% endif %} {% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main">Skip to content</a>
 
 <header class="topbar">
-    <!-- تم استبدال النص بصورة الشعار الجديد -->
-    <a href="{{ url_for('index') }}" class="logo-link">
-        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="SportsMate Logo" class="custom-logo">
+  <div class="topbar__inner">
+    <a class="brand" href="{{ url_for('main.dashboard') if current_user else url_for('main.index') }}">
+      <img src="{{ url_for('static', filename='Images/logo.svg') }}" alt="" width="62" height="28">
+      <span>SportsMate</span>
     </a>
 
     {% if current_user %}
-    <nav class="desktop-nav">
-        <a href="{{ url_for('dashboard') }}">Home</a>
-        <a href="{{ url_for('activities') }}">Activities</a>
-        <a href="{{ url_for('mates') }}">SportsMates</a>
-        <a href="{{ url_for('messages') }}">Messages</a>
-        <a href="{{ url_for('notifications') }}">
-            Notifications
-            {% if notification_count > 0 %}
-            <span class="notification-badge">{{ notification_count }}</span>
-            {% endif %}
-        </a>
-        <a href="{{ url_for('profile', user_id=current_user.id) }}">Profile</a>
+    <nav class="mainnav" aria-label="Main">
+      <a href="{{ url_for('main.dashboard') }}" {% if endpoint == 'main.dashboard' %}aria-current="page"{% endif %}>Home</a>
+      <a href="{{ url_for('activities.browse') }}" {% if request.blueprint == 'activities' %}aria-current="page"{% endif %}>Activities</a>
+      <a href="{{ url_for('people.mates') }}" {% if endpoint in ['people.mates', 'people.connections'] %}aria-current="page"{% endif %}>SportsMates
+        {% if pending_requests %}<span class="count" aria-label="{{ pending_requests }} new requests">{{ pending_requests }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('messages.inbox') }}" {% if request.blueprint == 'messages' %}aria-current="page"{% endif %}>Messages
+        {% if unread_messages %}<span class="count" aria-label="{{ unread_messages }} unread">{{ unread_messages }}</span>{% endif %}
+      </a>
     </nav>
-    <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+
+    <div class="topbar__actions">
+      <a class="iconbtn" href="{{ url_for('main.notifications') }}" {% if endpoint == 'main.notifications' %}aria-current="page"{% endif %}
+         aria-label="Notifications{% if notification_count %}, {{ notification_count }} new{% endif %}">
+        {{ ui.icon("bell") }}
+        {% if notification_count %}<span class="count count--dot">{{ notification_count if notification_count < 100 else "99+" }}</span>{% endif %}
+      </a>
+      <details class="account">
+        <summary aria-label="Account menu for {{ current_user.name }}">
+          {{ ui.avatar(current_user.name, current_user.id, "sm") }}
+        </summary>
+        <div class="account__panel">
+          <p class="account__who"><strong>{{ current_user.name }}</strong><span>{{ current_user.email }}</span></p>
+          <a href="{{ url_for('people.profile', user_id=current_user.id) }}">{{ ui.icon("user") }} My profile</a>
+          <a href="{{ url_for('people.edit_profile') }}">{{ ui.icon("edit") }} Edit profile</a>
+          <a href="{{ url_for('people.connections') }}">{{ ui.icon("users") }} My SportsMates
+            {% if pending_requests %}<span class="count">{{ pending_requests }}</span>{% endif %}</a>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            {{ ui.csrf() }}
+            <button type="submit">{{ ui.icon("logout") }} Log out</button>
+          </form>
+        </div>
+      </details>
+    </div>
     {% else %}
-    <nav class="desktop-nav">
-        <a href="{{ url_for('login') }}">Login</a>
-        <a href="{{ url_for('register') }}" class="nav-button">Join SportsMate</a>
+    <nav class="guestnav" aria-label="Account">
+      <a href="{{ url_for('auth.login') }}" {% if endpoint == 'auth.login' %}aria-current="page"{% endif %}>Log in</a>
+      <a class="btn btn--primary btn--small" href="{{ url_for('auth.register') }}">Create account</a>
     </nav>
     {% endif %}
+  </div>
 </header>
 
-<main class="main-container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flash-container">
-                {% for category, message in messages %}
-                    <div class="flash {{ category }}">{{ message }}</div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-    {% block content %}{% endblock %}
+<main id="main" class="page {% block page_class %}{% endblock %}" tabindex="-1">
+  {% with flashes = get_flashed_messages(with_categories=true) %}
+  {% if flashes %}
+  <div class="flashes">
+    {% for category, text in flashes %}
+    <div class="flash flash--{{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">
+      {{ ui.icon("alert" if category == "error" else ("check" if category == "success" else "info")) }}
+      <p>{{ text }}</p>
+      <button type="button" class="flash__close" aria-label="Close message">{{ ui.icon("x") }}</button>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
 </main>
 
+<footer class="footer">
+  <p>SportsMate. Find people, play sports, stay active.</p>
+</footer>
+
 {% if current_user %}
-<nav class="mobile-nav">
-    <a href="{{ url_for('dashboard') }}">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-        <small>Home</small>
-    </a>
-    <a href="{{ url_for('activities') }}">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-        <small>Activities</small>
-    </a>
-    <a href="{{ url_for('create_activity') }}" class="mobile-create">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
-        <small>Create</small>
-    </a>
-    <a href="{{ url_for('messages') }}">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg></span>
-        <small>Messages</small>
-    </a>
-    <a href="{{ url_for('profile', user_id=current_user.id) }}">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-        <small>Profile</small>
-    </a>
+<nav class="tabbar" aria-label="Main">
+  <a href="{{ url_for('main.dashboard') }}" {% if endpoint == 'main.dashboard' %}aria-current="page"{% endif %}>{{ ui.icon("home") }}<span>Home</span></a>
+  <a href="{{ url_for('activities.browse') }}" {% if request.blueprint == 'activities' and endpoint != 'activities.create' %}aria-current="page"{% endif %}>{{ ui.icon("activity") }}<span>Activities</span></a>
+  <a class="tabbar__create" href="{{ url_for('activities.create') }}" {% if endpoint == 'activities.create' %}aria-current="page"{% endif %}>{{ ui.icon("plus") }}<span>Create</span></a>
+  <a href="{{ url_for('people.mates') }}" {% if endpoint in ['people.mates', 'people.connections'] %}aria-current="page"{% endif %}>{{ ui.icon("users") }}<span>Mates</span>
+    {% if pending_requests %}<span class="count count--tab">{{ pending_requests }}</span>{% endif %}</a>
+  <a href="{{ url_for('messages.inbox') }}" {% if request.blueprint == 'messages' %}aria-current="page"{% endif %}>{{ ui.icon("message") }}<span>Messages</span>
+    {% if unread_messages %}<span class="count count--tab">{{ unread_messages }}</span>{% endif %}</a>
 </nav>
 {% endif %}
-
-<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

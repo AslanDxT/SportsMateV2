@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="auth auth--register">
+  <div class="auth__photo" aria-hidden="true"></div>
+  <section class="auth__card auth__card--wide">
+    <h1>Create your account</h1>
+    <p class="lead">It takes one minute. You can change everything later.</p>
+
+    <form method="post" class="form" novalidate>
+      {{ ui.csrf() }}
+
+      <div class="field">
+        <label for="name">Name</label>
+        <input id="name" type="text" name="name" value="{{ values.name or '' }}" autocomplete="name" required maxlength="{{ limits.name }}" {{ ui.invalid(errors, 'name') }}>
+        {{ ui.field_error(errors, "name") }}
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" value="{{ values.email or '' }}" autocomplete="email" required maxlength="{{ limits.email }}" {{ ui.invalid(errors, 'email') }}>
+        <p class="hint">Only used to log in. Other members can't see it.</p>
+        {{ ui.field_error(errors, "email") }}
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="password">
+            <input id="password" type="password" name="password" autocomplete="new-password" required minlength="{{ limits.password_min }}" maxlength="{{ limits.password_max }}" {{ ui.invalid(errors, 'password') }}>
+            <button type="button" class="password__toggle" data-toggle-password="password" aria-pressed="false">Show</button>
+          </div>
+          <p class="hint">At least {{ limits.password_min }} characters.</p>
+          {{ ui.field_error(errors, "password") }}
+        </div>
+        <div class="field">
+          <label for="confirm_password">Repeat password</label>
+          <input id="confirm_password" type="password" name="confirm_password" autocomplete="new-password" required maxlength="{{ limits.password_max }}">
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="location">Town or city <span class="optional">(optional)</span></label>
+        <input id="location" type="text" name="location" value="{{ values.location or '' }}" placeholder="For example Venlo" autocomplete="address-level2" maxlength="{{ limits.location }}" {{ ui.invalid(errors, 'location') }}>
+        {{ ui.field_error(errors, "location") }}
+      </div>
+
+      <div class="form-row">
+        <div class="field">
+          <label for="skill_level">Your level</label>
+          <select id="skill_level" name="skill_level">
+            {% for level in skill_levels %}
+            <option {% if values.skill_level == level %}selected{% endif %}>{{ level }}</option>
+            {% endfor %}
+          </select>
+          {{ ui.field_error(errors, "skill_level") }}
+        </div>
+        <div class="field">
+          <label for="sport_id">Favourite sport <span class="optional">(optional)</span></label>
+          <select id="sport_id" name="sport_id" {{ ui.invalid(errors, 'sport_id') }}>
+            <option value="">Choose a sport</option>
+            {% for sport in sports %}
+            <option value="{{ sport.id }}" {% if values.sport_id == sport.id %}selected{% endif %}>{{ sport.name }}</option>
+            {% endfor %}
+          </select>
+          {{ ui.field_error(errors, "sport_id") }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--block">Create account</button>
+    </form>
+
+    <p class="auth__switch">Already a member? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </section>
+</div>
+{% endblock %}

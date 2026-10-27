@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Find SportsMates{% endblock %}
+{% block content %}
+<header class="pagehead pagehead--mates">
+  <div>
+    <h1>Find SportsMates</h1>
+    <p>People who play the same sports as you are shown first.</p>
+  </div>
+  <a class="btn btn--secondary" href="{{ url_for('people.connections') }}">{{ ui.icon("users") }} My SportsMates
+    {% if pending_requests %}<span class="count">{{ pending_requests }}</span>{% endif %}</a>
+</header>
+
+<form method="get" class="filters filters--three" role="search" aria-label="Filter people">
+  <div class="field">
+    <label for="q">Name</label>
+    <div class="input-icon">
+      {{ ui.icon("search") }}
+      <input id="q" type="search" name="q" value="{{ filters.q }}" placeholder="Search by name" maxlength="{{ limits.search }}">
+    </div>
+  </div>
+  <div class="field">
+    <label for="location">Town or city</label>
+    <input id="location" type="text" name="location" value="{{ filters.location }}" placeholder="For example Eindhoven" maxlength="{{ limits.search }}">
+  </div>
+  <div class="field">
+    <label for="sport">Sport</label>
+    <select id="sport" name="sport">
+      <option value="">All sports</option>
+      {% for sport in sports %}
+      <option value="{{ sport.name }}" {% if filters.sport == sport.name %}selected{% endif %}>{{ sport.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="filters__actions">
+    <button type="submit" class="btn btn--primary">{{ ui.icon("search") }} Search</button>
+    {% if active_filters %}<a class="btn btn--ghost" href="{{ url_for('people.mates') }}">Clear</a>{% endif %}
+  </div>
+</form>
+
+{% if people %}
+<div class="grid grid--people">
+  {% for person in people %}
+  <article class="person">
+    <div class="person__head">
+      {{ ui.avatar(person.name, person.id, "md") }}
+      <div>
+        <h3><a href="{{ url_for('people.profile', user_id=person.id) }}">{{ person.name }}</a></h3>
+        <p class="meta-line">{{ ui.icon("pin") }} {{ person.location or "Town not added" }}</p>
+      </div>
+      {% if person.connection == "connected" %}<span class="chip chip--joined person__badge">{{ ui.icon("check") }} SportsMate</span>{% endif %}
+    </div>
+
+    {% if person.shared_sports %}
+    <p class="person__shared">{{ ui.icon("check") }} You both play {{ person.shared_sports|join(", ") }}</p>
+    {% endif %}
+
+    <p class="person__bio">{{ person.bio or "No bio yet." }}</p>
+
+    <div class="chips">
+      <span class="chip chip--level">{{ person.skill_level }}</span>
+      {% for sport in person.sports %}
+      <span class="chip {% if sport in person.shared_sports %}chip--sport{% else %}chip--plain{% endif %}">{{ sport }}</span>
+      {% endfor %}
+    </div>
+
+    <div class="person__foot">
+      <a class="btn btn--ghost btn--small" href="{{ url_for('people.profile', user_id=person.id) }}">View profile</a>
+      {{ ui.connect_button(person, request.full_path) }}
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{{ ui.pagination("people.mates", page, has_next, query_args) }}
+{% elif active_filters %}
+{{ ui.empty("Nobody found", "No members match these filters. Try a nearby town or another sport.", url_for('people.mates'), "Clear filters", "search") }}
+{% else %}
+{{ ui.empty("No other members yet", "When more people join SportsMate, you'll find them here. Meanwhile, host an activity.", url_for('activities.create'), "Create activity", "users") }}
+{% endif %}
+{% endblock %}

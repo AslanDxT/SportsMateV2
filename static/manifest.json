@@ -1,23 +1,15 @@
 {
     "name": "SportsMate",
     "short_name": "SportsMate",
-    "description": "Find people. Play sports. Stay active.",
-    "start_url": "/",
+    "description": "Find people nearby to play sports with.",
+    "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#f7f7f5",
-    "theme_color": "#111827",
-    "orientation": "portrait-primary",
+    "background_color": "#0D1626",
+    "theme_color": "#0D1626",
     "icons": [
-        {
-            "src": "/static/icons/icon-192.png",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "/static/icons/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
+        { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/static/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
     ]
 }

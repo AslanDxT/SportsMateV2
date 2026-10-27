@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}{{ person.name }}{% endblock %}
+{% block content %}
+<section class="profilehead">
+  {{ ui.avatar(person.name, person.id, "xl") }}
+  <div class="profilehead__main">
+    <h1>{{ person.name }}</h1>
+    <p class="meta-line">{{ ui.icon("pin") }} {{ person.location or "Town not added" }}</p>
+    <div class="chips">
+      <span class="chip chip--level">{{ person.skill_level }}</span>
+      {% if person.connection == "connected" %}<span class="chip chip--joined">{{ ui.icon("check") }} Your SportsMate</span>{% endif %}
+    </div>
+  </div>
+  <dl class="profilehead__stats">
+    <div><dt>Hosted</dt><dd>{{ stats.hosted }}</dd></div>
+    <div><dt>Played</dt><dd>{{ stats.played }}</dd></div>
+    <div><dt>SportsMates</dt><dd>{{ stats.mates }}</dd></div>
+  </dl>
+  <div class="profilehead__actions">
+    {% if is_me %}
+    <a class="btn btn--secondary" href="{{ url_for('people.edit_profile') }}">{{ ui.icon("edit") }} Edit profile</a>
+    {% else %}
+    {{ ui.connect_button(person, request.path, small=False) }}
+    {% if person.connection == "connected" %}
+    <form method="post" action="{{ url_for('people.connection_action', connection_id=person.connection_id, action='remove') }}" class="inline-form" data-confirm="Remove {{ person.name }} as SportsMate? You can't send each other messages anymore.">
+      {{ ui.csrf() }}<input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" class="btn btn--ghost">Remove SportsMate</button>
+    </form>
+    {% elif person.connection == "received" %}
+    <form method="post" action="{{ url_for('people.connection_action', connection_id=person.connection_id, action='decline') }}" class="inline-form">
+      {{ ui.csrf() }}<input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" class="btn btn--ghost">Decline</button>
+    </form>
+    {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+<div class="profilegrid">
+  <section class="card" aria-labelledby="about-title">
+    <h2 id="about-title">About</h2>
+    {% if person.bio %}<p class="prewrap">{{ person.bio }}</p>{% else %}<p class="muted">{{ "Tell others a bit about yourself." if is_me else "No bio yet." }}</p>{% endif %}
+    <dl class="kv">
+      <div><dt>Usually free</dt><dd>{{ person.availability or "Not added" }}</dd></div>
+      <div><dt>Member since</dt><dd>{{ person.created_at|month_year }}</dd></div>
+    </dl>
+  </section>
+
+  <section class="card" aria-labelledby="sports-title">
+    <h2 id="sports-title">Sports</h2>
+    {% if person.sports %}
+    <div class="chips">
+      {% for sport in person.sports %}
+      <span class="chip {% if sport in person.shared_sports and not is_me %}chip--sport{% else %}chip--plain{% endif %}">{{ sport }}</span>
+      {% endfor %}
+    </div>
+    {% if person.shared_sports and not is_me %}<p class="hint">Highlighted: sports you both play.</p>{% endif %}
+    {% else %}
+    <p class="muted">{{ "Add the sports you play so people can find you." if is_me else "No sports added yet." }}</p>
+    {% if is_me %}<a class="btn btn--secondary btn--small" href="{{ url_for('people.edit_profile') }}">Add sports</a>{% endif %}
+    {% endif %}
+  </section>
+</div>
+
+<section class="section" aria-labelledby="hosting-title">
+  <div class="section__head"><h2 id="hosting-title">{{ "You host" if is_me else "Hosting" }}</h2></div>
+  {% if hosting %}
+  <div class="grid grid--cards">{% for activity in hosting %}{{ ui.activity_card(activity) }}{% endfor %}</div>
+  {% else %}
+  <p class="muted">{{ "You're not hosting any upcoming activities." if is_me else person.name ~ " is not hosting any upcoming activities." }}</p>
+  {% endif %}
+</section>
+
+<section class="section" aria-labelledby="playing-title">
+  <div class="section__head"><h2 id="playing-title">{{ "You play in" if is_me else "Plays in" }}</h2></div>
+  {% if playing %}
+  <div class="grid grid--cards">{% for activity in playing %}{{ ui.activity_card(activity) }}{% endfor %}</div>
+  {% else %}
+  <p class="muted">No upcoming activities joined.</p>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}{{ "Edit activity" if editing else "Create activity" }}{% endblock %}
+{% block content %}
+<div class="narrow">
+  {% if editing %}
+  <a class="backlink" href="{{ url_for('activities.detail', activity_id=activity.id) }}">{{ ui.icon("left") }} Back to the activity</a>
+  {% else %}
+  <a class="backlink" href="{{ url_for('activities.browse') }}">{{ ui.icon("left") }} Back to activities</a>
+  {% endif %}
+
+  <header class="formhead">
+    <h1>{{ "Edit activity" if editing else "Create an activity" }}</h1>
+    <p>{% if editing %}People who joined get a notification when the time or place changes.{% else %}Plan a game. Others can find it and join until it's full.{% endif %}</p>
+  </header>
+
+  <form method="post" class="form card" novalidate>
+    {{ ui.csrf() }}
+
+    <div class="field">
+      <label for="title">Title</label>
+      <input id="title" type="text" name="title" value="{{ values.title or '' }}" placeholder="For example: Sunday 5-a-side in the park" required minlength="3" maxlength="{{ limits.title }}" {{ ui.invalid(errors, 'title') }}>
+      {{ ui.field_error(errors, "title") }}
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="sport_id">Sport</label>
+        <select id="sport_id" name="sport_id" required {{ ui.invalid(errors, 'sport_id') }}>
+          <option value="">Choose a sport</option>
+          {% for sport in sports %}
+          <option value="{{ sport.id }}" {% if values.sport_id == sport.id %}selected{% endif %}>{{ sport.name }}</option>
+          {% endfor %}
+        </select>
+        {{ ui.field_error(errors, "sport_id") }}
+      </div>
+      <div class="field">
+        <label for="skill_level">Level</label>
+        <select id="skill_level" name="skill_level" {{ ui.invalid(errors, 'skill_level') }}>
+          {% for level in skill_levels %}
+          <option {% if values.skill_level == level %}selected{% endif %}>{{ level }}</option>
+          {% endfor %}
+        </select>
+        {{ ui.field_error(errors, "skill_level") }}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="date">Date</label>
+        <input id="date" type="date" name="date" value="{{ values.date or '' }}" min="{{ limits_form.min_date }}" max="{{ limits_form.max_date }}" required {{ ui.invalid(errors, 'date') }}>
+        {{ ui.field_error(errors, "date") }}
+      </div>
+      <div class="field">
+        <label for="time">Start time</label>
+        <input id="time" type="time" name="time" value="{{ values.time or '' }}" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="location">Meeting place</label>
+      <input id="location" type="text" name="location" value="{{ values.location or '' }}" placeholder="For example: Julianapark, Venlo" required maxlength="{{ limits.activity_location }}" {{ ui.invalid(errors, 'location') }}>
+      <p class="hint">Use a public place. Don't share your home address.</p>
+      {{ ui.field_error(errors, "location") }}
+    </div>
+
+    <div class="field">
+      <label for="max_participants">How many people, including you?</label>
+      <input id="max_participants" type="number" name="max_participants" value="{{ values.max_participants or '' }}" min="{{ [2, activity.participant_count]|max if editing else 2 }}" max="{{ limits_form.max_participants }}" inputmode="numeric" required {{ ui.invalid(errors, 'max_participants') }}>
+      {% if editing %}<p class="hint">{{ activity.participant_count }} {{ "person has" if activity.participant_count == 1 else "people have" }} joined so far.</p>{% endif %}
+      {{ ui.field_error(errors, "max_participants") }}
+    </div>
+
+    <div class="field">
+      <label for="description">Description <span class="optional">(optional)</span></label>
+      <textarea id="description" name="description" rows="5" maxlength="{{ limits.description }}" data-counter placeholder="What should people bring? How intense is it? Anything else to know?" {{ ui.invalid(errors, 'description') }}>{{ values.description or '' }}</textarea>
+      {{ ui.field_error(errors, "description") }}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">{{ "Save changes" if editing else "Publish activity" }}</button>
+      <a class="btn btn--ghost" href="{{ url_for('activities.detail', activity_id=activity.id) if editing else url_for('activities.browse') }}">{{ "Discard changes" if editing else "Back" }}</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

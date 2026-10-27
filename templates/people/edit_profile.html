@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Edit profile{% endblock %}
+{% block content %}
+<div class="narrow">
+  <a class="backlink" href="{{ url_for('people.profile', user_id=current_user.id) }}">{{ ui.icon("left") }} Back to your profile</a>
+
+  <header class="formhead">
+    <h1>Edit profile</h1>
+    <p>Other members see your name, town, level, sports, bio and when you're usually free. Your email stays private.</p>
+  </header>
+
+  <form method="post" class="form card" novalidate>
+    {{ ui.csrf() }}
+    <h2 class="card__title">About you</h2>
+
+    <div class="field">
+      <label for="name">Name</label>
+      <input id="name" type="text" name="name" value="{{ values.name or '' }}" required maxlength="{{ limits.name }}" autocomplete="name" {{ ui.invalid(errors, 'name') }}>
+      {{ ui.field_error(errors, "name") }}
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label for="location">Town or city</label>
+        <input id="location" type="text" name="location" value="{{ values.location or '' }}" maxlength="{{ limits.location }}" placeholder="For example Venlo" autocomplete="address-level2" {{ ui.invalid(errors, 'location') }}>
+        {{ ui.field_error(errors, "location") }}
+      </div>
+      <div class="field">
+        <label for="skill_level">Your level</label>
+        <select id="skill_level" name="skill_level">
+          {% for level in skill_levels %}
+          <option {% if values.skill_level == level %}selected{% endif %}>{{ level }}</option>
+          {% endfor %}
+        </select>
+        {{ ui.field_error(errors, "skill_level") }}
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="availability">When are you usually free?</label>
+      <input id="availability" type="text" name="availability" value="{{ values.availability or '' }}" maxlength="{{ limits.availability }}" placeholder="For example: weekday evenings and Sunday morning" {{ ui.invalid(errors, 'availability') }}>
+      {{ ui.field_error(errors, "availability") }}
+    </div>
+
+    <div class="field">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" rows="4" maxlength="{{ limits.bio }}" data-counter placeholder="What do you like to play? What are you looking for?" {{ ui.invalid(errors, 'bio') }}>{{ values.bio or '' }}</textarea>
+      {{ ui.field_error(errors, "bio") }}
+    </div>
+
+    <fieldset class="field">
+      <legend>Sports you play</legend>
+      <div class="togglegrid">
+        {% for sport in sports %}
+        <label class="toggle">
+          <input type="checkbox" name="sports" value="{{ sport.id }}" {% if sport.id in selected %}checked{% endif %}>
+          <span>{{ sport.name }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      {{ ui.field_error(errors, "sports") }}
+    </fieldset>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">Save profile</button>
+      <a class="btn btn--ghost" href="{{ url_for('people.profile', user_id=current_user.id) }}">Discard changes</a>
+    </div>
+  </form>
+
+  <section class="card account-settings" id="account" aria-labelledby="account-title">
+    <h2 class="card__title" id="account-title">Account</h2>
+    <p class="muted">Logged in as {{ current_user.email }}</p>
+
+    <form method="post" action="{{ url_for('people.change_password') }}" class="form">
+      {{ ui.csrf() }}
+      <h3>Change password</h3>
+      <div class="field">
+        <label for="current_password">Current password</label>
+        <input id="current_password" type="password" name="current_password" autocomplete="current-password" required>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label for="new_password">New password</label>
+          <input id="new_password" type="password" name="new_password" autocomplete="new-password" minlength="{{ limits.password_min }}" maxlength="{{ limits.password_max }}" required>
+          <p class="hint">At least {{ limits.password_min }} characters.</p>
+        </div>
+        <div class="field">
+          <label for="confirm_new_password">Repeat new password</label>
+          <input id="confirm_new_password" type="password" name="confirm_password" autocomplete="new-password" required>
+        </div>
+      </div>
+      <div class="form-actions"><button type="submit" class="btn btn--secondary">Change password</button></div>
+    </form>
+
+    <form method="post" action="{{ url_for('people.delete_account') }}" class="form danger-zone" data-confirm="Delete your account for good? Your profile, messages and the activities you host will be removed.">
+      {{ ui.csrf() }}
+      <h3>Delete account</h3>
+      <p class="muted">This removes your profile, connections, messages and the activities you host. It can't be undone.</p>
+      <div class="field">
+        <label for="delete_password">Your password</label>
+        <input id="delete_password" type="password" name="password" autocomplete="current-password" required>
+      </div>
+      <div class="form-actions"><button type="submit" class="btn btn--danger">{{ ui.icon("trash") }} Delete my account</button></div>
+    </form>
+  </section>
+</div>
+{% endblock %}

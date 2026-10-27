@@ -1,75 +1,60 @@
 {% extends "base.html" %}
-
-{% block title %}Dashboard - SportsMate{% endblock %}
-
+{% import "macros.html" as ui with context %}
+{% block title %}Home{% endblock %}
 {% block content %}
-<section class="page-header">
-    <div>
-        <span class="eyebrow">SPORTS COMMUNITY</span>
-        <h1>Hey {{ current_user.name }}</h1>
-        <p>What do you want to play today?</p>
-    </div>
-    <a href="{{ url_for('create_activity') }}" class="btn">
-        <svg class="app-icon" style="margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Create Activity
-    </a>
+<header class="pagehead pagehead--dashboard">
+  <div>
+    <h1>Hey {{ current_user.name.split()[0] if current_user.name.strip() else "there" }}</h1>
+    <p>What do you want to play today?</p>
+  </div>
+  <a class="btn btn--primary" href="{{ url_for('activities.create') }}">{{ ui.icon("plus") }} Create activity</a>
+</header>
+
+{% if pending_requests or profile_incomplete %}
+<div class="notices">
+  {% if pending_requests %}
+  <a class="notice" href="{{ url_for('people.connections') }}">
+    {{ ui.icon("user-plus") }}
+    <span><strong>{{ pending_requests }} {{ "person wants" if pending_requests == 1 else "people want" }} to be your SportsMate.</strong> Answer the {{ "request" if pending_requests == 1 else "requests" }}.</span>
+    {{ ui.icon("right") }}
+  </a>
+  {% endif %}
+  {% if profile_incomplete %}
+  <a class="notice notice--quiet" href="{{ url_for('people.edit_profile') }}">
+    {{ ui.icon("user") }}
+    <span><strong>Finish your profile.</strong> Add your sports and town so the right people can find you.</span>
+    {{ ui.icon("right") }}
+  </a>
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="section" aria-labelledby="mine-title">
+  <div class="section__head">
+    <h2 id="mine-title">Your next games</h2>
+    <a class="textlink" href="{{ url_for('activities.browse', show='joined') }}">All your activities</a>
+  </div>
+  {% if my_activities %}
+  <div class="grid grid--cards">
+    {% for activity in my_activities %}{{ ui.activity_card(activity) }}{% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty("No games planned", "You haven't joined an activity yet. Find one below or host your own.", url_for('activities.browse'), "Find activities", "calendar") }}
+  {% endif %}
 </section>
 
-<div class="quick-actions">
-    <a href="{{ url_for('activities') }}" class="quick-card">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-        <div>
-            <strong>Find Activities</strong>
-            <small>Discover sports near you</small>
-        </div>
-    </a>
-    <a href="{{ url_for('mates') }}" class="quick-card">
-        <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-        <div>
-            <strong>Find SportsMates</strong>
-            <small>Meet people with similar interests</small>
-        </div>
-    </a>
-</div>
-
-<section class="section">
-    <div class="section-heading inline">
-        <div>
-            <span class="eyebrow">UPCOMING</span>
-            <h2>Activities</h2>
-        </div>
-        <a href="{{ url_for('activities') }}" style="color: var(--accent-cyan); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; font-size: 0.9rem;">View all →</a>
-    </div>
-
-    <div class="card-grid">
-        {% for activity in activities %}
-        <article class="activity-card">
-            <div class="activity-top">
-                <span class="sport-tag">{{ activity.sport_name }}</span>
-                <span class="skill-tag">{{ activity.skill_level }}</span>
-            </div>
-            <h3>{{ activity.title }}</h3>
-            
-            <div class="activity-info">
-                <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> {{ activity.date }}</span>
-                <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> {{ activity.time }}</span>
-                <span><svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg> {{ activity.location }}</span>
-            </div>
-
-            <div class="activity-bottom">
-                <span class="metric-capacity">
-                    <svg class="app-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                    {{ activity.participant_count }}/{{ activity.max_participants }}
-                </span>
-                <a href="{{ url_for('activity_detail', activity_id=activity.id) }}" class="btn-small primary">View</a>
-                </div>
-        </article>
-        {% else %}
-        <div class="empty-state">
-            <h3>No activities yet</h3>
-            <p>Be the first person to set up a session.</p>
-            <a href="{{ url_for('create_activity') }}" class="btn" style="margin-top: 15px;">Create Activity</a>
-        </div>
-        {% endfor %}
-    </div>
+<section class="section" aria-labelledby="open-title">
+  <div class="section__head">
+    <h2 id="open-title">Open for you</h2>
+    <a class="textlink" href="{{ url_for('activities.browse', open_only=1) }}">See all open activities</a>
+  </div>
+  {% if suggestions %}
+  <p class="section__note">Activities with free spots. Your sports and your town come first.</p>
+  <div class="grid grid--cards">
+    {% for activity in suggestions %}{{ ui.activity_card(activity) }}{% endfor %}
+  </div>
+  {% else %}
+  {{ ui.empty("Nothing open right now", "There are no activities with free spots at the moment. Be the first: plan a game and invite others.", url_for('activities.create'), "Create activity") }}
+  {% endif %}
 </section>
 {% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="auth auth--login">
+  <div class="auth__photo" aria-hidden="true"></div>
+  <section class="auth__card">
+    <h1>Welcome back</h1>
+    <p class="lead">Log in to see your games and messages.</p>
+
+    <form method="post" class="form" novalidate>
+      {{ ui.csrf() }}
+      {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" value="{{ email }}" autocomplete="email" required autofocus maxlength="{{ limits.email }}">
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password">
+          <input id="password" type="password" name="password" autocomplete="current-password" required maxlength="{{ limits.password_max }}">
+          <button type="button" class="password__toggle" data-toggle-password="password" aria-pressed="false">Show</button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn--primary btn--block">Log in</button>
+    </form>
+
+    <p class="auth__switch">New to SportsMate? <a href="{{ url_for('auth.register') }}">Create an account</a></p>
+  </section>
+</div>
+{% endblock %}

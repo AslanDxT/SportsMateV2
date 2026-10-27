@@ -1,0 +1,13 @@
+on powershell
+
+.venv/scripts/activate
+
+$env:SPORTSMATE_HOST="0.0.0.0"
+
+python app.py
+
+on terminal
+
+.venv\Scripts\activate
+set SPORTSMATE_HOST=0.0.0.0
+python app.py

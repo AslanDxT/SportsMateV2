@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% import "macros.html" as ui with context %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<header class="formhead">
+  <h1>Messages</h1>
+  <p>Chat with your SportsMates to plan your next game.</p>
+</header>
+
+{% if conversations %}
+<ul class="list list--inbox">
+  {% for c in conversations %}
+  <li>
+    <a class="inboxrow{% if c.unread %} inboxrow--unread{% endif %}" href="{{ url_for('messages.conversation', user_id=c.id) }}">
+      {{ ui.avatar(c.name, c.id, "md") }}
+      <span class="inboxrow__text">
+        <strong>{{ c.name }}</strong>
+        {% if c.last_message %}
+        <span class="inboxrow__preview">{% if c.last_sender == current_user.id %}You: {% endif %}{{ c.last_message|truncate(90, True, "...") }}</span>
+        {% else %}
+        <span class="inboxrow__preview muted">No messages yet. Say hi!</span>
+        {% endif %}
+      </span>
+      <span class="inboxrow__meta">
+        {% if c.last_at %}<small>{{ c.last_at|timestamp }}</small>{% endif %}
+        {% if c.unread %}<span class="count" aria-label="{{ c.unread }} unread">{{ c.unread }}</span>{% endif %}
+      </span>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+{{ ui.empty("No conversations yet", "You can send messages to your SportsMates. Connect with someone first.", url_for('people.mates'), "Find SportsMates", "message") }}
+{% endif %}
+{% endblock %}
